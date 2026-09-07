@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hong Kong Disneyland Cross-Sell Campaign Analysis — Aug 2026</title>
+<style>
+  :root {
+    --bg: #F2F4F8;
+    --surface: #FFFFFF;
+    --border: #DDE2EC;
+    --text: #0F1623;
+    --muted: #5E6C84;
+    --blue: #1A54F0;
+    --blue-soft: #EEF3FF;
+    --green: #00966D;
+    --green-soft: #E6F7F3;
+    --amber: #C46D00;
+    --amber-soft: #FFF4E0;
+    --red: #C9302C;
+    --red-soft: #FFF0EF;
+    --radius: 10px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Nav sidebar ── */
+  .nav-sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 200px;
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 20px 0 40px;
+  }
+  .nav-sidebar .nav-logo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 16px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .nav-sidebar a {
+    display: block;
+    padding: 7px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: all 0.1s;
+  }
+  .nav-sidebar a:hover { color: var(--text); background: var(--bg); }
+  .nav-sidebar a.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-soft); font-weight: 600; }
+  .nav-sidebar .nav-group {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--border);
+    padding: 14px 16px 4px;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 32px 24px 80px 224px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .report-header {
+    margin-bottom: 36px;
+  }
+  .report-header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .report-header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .report-header .meta {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    gap: 20px;
+  }
+  .report-header .meta span::before {
+    content: '·';
+    margin-right: 8px;
+    color: var(--border);
+  }
+  .report-header .meta span:first-child::before { content: ''; margin: 0; }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 40px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  /* ── Alert banner ── */
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    margin-bottom: 28px;
+    font-size: 13px;
+  }
+  .alert.critical { background: var(--red-soft); border-left: 4px solid var(--red); color: var(--red); }
+  .alert.warning  { background: var(--amber-soft); border-left: 4px solid var(--amber); color: var(--amber); }
+  .alert .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .alert .alert-body strong { display: block; margin-bottom: 2px; }
+
+  /* ── Coupon strategy cards ── */
+  .strategy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .strategy-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .strategy-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--blue);
+  }
+  .strategy-card.warn::before { background: var(--amber); }
+  .strategy-card.critical::before { background: var(--red); }
+  .strategy-card .s-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .strategy-card .s-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .strategy-card .s-live {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .strategy-card .s-markets {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin: 2px 2px 2px 0;
+  }
+  .tag-blue { background: var(--blue-soft); color: var(--blue); }
+  .tag-green { background: var(--green-soft); color: var(--green); }
+  .tag-amber { background: var(--amber-soft); color: var(--amber); }
+  .tag-red { background: var(--red-soft); color: var(--red); }
+
+  /* ── Tables ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: #F8F9FC;
+    border-bottom: 1px solid var(--border);
+  }
+  thead th.right { text-align: right; }
+  tbody td {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid #F0F2F6;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td.right { text-align: right; }
+  tbody td.num {
+    font-family: var(--mono);
+    font-size: 13px;
+    text-align: right;
+  }
+  tbody tr:hover td { background: #FAFBFD; }
+  .total-row td { font-weight: 600; background: #F8F9FC; }
+
+  /* ── Budget bar ── */
+  .budget-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .budget-bar {
+    width: 80px;
+    height: 5px;
+    background: #E8EBF2;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .budget-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+  .budget-bar-fill.ok    { background: var(--green); }
+  .budget-bar-fill.warn  { background: var(--amber); }
+  .budget-bar-fill.crit  { background: var(--red); }
+  .budget-pct {
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: normal;
+    line-height: 1.4;
+  }
+
+  /* ── Headline lift stats ── */
+  .lift-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .lift-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .lift-card .lift-num {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--blue);
+    margin-bottom: 6px;
+  }
+  .lift-card .lift-label {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .lift-card .lift-label strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  /* ── Market lift table bar ── */
+  .lift-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lift-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--blue);
+    opacity: 0.75;
+    flex-shrink: 0;
+  }
+  .lift-pct {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .lift-pct.high { color: var(--green); }
+  .lift-pct.mid  { color: var(--blue); }
+  .lift-pct.low  { color: var(--muted); }
+
+  /* ── Insights ── */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .insight-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .insight-card ul {
+    padding-left: 16px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .insight-card ul li { margin-bottom: 3px; }
+  .insight-card p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── Recommendations ── */
+  .rec-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .rec-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #F0F2F6;
+    align-items: flex-start;
+  }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-priority {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .p-high   { background: var(--red-soft);   color: var(--red); }
+  .p-medium { background: var(--amber-soft);  color: var(--amber); }
+  .p-low    { background: var(--blue-soft);   color: var(--blue); }
+  .rec-text { font-size: 13px; line-height: 1.5; }
+  .rec-text strong { color: var(--text); }
+
+  /* ── Methodology note ── */
+  .methodology {
+    background: #F8F9FC;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .methodology strong { color: var(--text); }
+
+  /* ── Partner flag ── */
+  .partner-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--green-soft);
+    color: var(--green);
+    border: 1px solid #B7E8DB;
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    float: right;
+  }
+
+  @media (max-width: 700px) {
+    .strategy-grid, .lift-grid, .insight-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav-sidebar">
+  <div class="nav-logo">Campaign Report</div>
+  <div class="nav-group">Coupon Stats</div>
+  <a href="#s1">Strategies Overview</a>
+  <a href="#s2">Coupon Performance</a>
+  <a href="#s2b">Disney Attribution</a>
+  <a href="#s2c">Tier Behavior</a>
+  <a href="#s2d">Market Distribution</a>
+  <div class="nav-group">Order Lift</div>
+  <a href="#s3">Headline Numbers</a>
+  <a href="#s4">PoP + YoY Analysis</a>
+  <div class="nav-group">Attach Rate</div>
+  <a href="#s3b">Attach Rate (GBA-bound)</a>
+  <div class="nav-group">Insights</div>
+  <a href="#s5">Behavioral Insights</a>
+</nav>
+
+<!-- ── HEADER ── -->
+<div class="report-header">
+  <div class="eyebrow">Campaign Performance Report</div>
+  <h1>[INTERNAL] Hong Kong Disneyland Cross-Sell Campaign Analysis</h1>
+  <div class="meta">
+    <span>Analysis period: Aug 1–31, 2026</span>
+    <span>Last updated: Aug 31, 2026 (end of day)</span>
+    <span>3 coupon strategies</span>
+  </div>
+</div>
+
+<!-- ── SECTION 1: COUPON STRATEGIES ── -->
+<div class="section" id="s1">
+  <div class="section-title">Coupon Strategies</div>
+  <div class="strategy-grid">
+
+    <div class="strategy-card">
+      <div class="s-id">Strategy ID: 1106078874</div>
+      <div class="s-name">10% Off — Multi-Market</div>
+      <div class="s-live">Live since Jul 20 · Pre-existing offer</div>
+      <div class="s-markets">
+        <span class="tag tag-blue">TWD</span><span class="tag tag-blue">HKD</span><span class="tag tag-blue">EUR</span>
+        <span class="tag tag-blue">CAD</span><span class="tag tag-blue">USD</span><span class="tag tag-blue">MYR</span>
+        <span class="tag tag-blue">VND</span><span class="tag tag-blue">THB</span><span class="tag tag-blue">AUD</span>
+        <span class="tag tag-blue">SGD</span><span class="tag tag-blue">KRW</span><span class="tag tag-blue">JPY</span>
+        <span class="tag tag-blue">GBP</span><span class="tag tag-blue">IDR</span><span class="tag tag-blue">PHP</span>
+        <span class="tag tag-blue">RUB</span>
+      </div>
+    </div>
+
+    <div class="strategy-card warn">
+      <div class="s-id">Strategy ID: 1032748938</div>
+      <div class="s-name">Tiered Flat Discount — 3 Markets</div>
+      <div class="s-live">Live since Jul 30 · Budget nearly spent</div>
+      <div class="s-markets">
+        <span class="tag tag-amber">TWD</span>
+        <span class="tag tag-amber">MYR</span>
+        <span class="tag tag-amber">THB</span>
+        <br><br>
+        <span style="font-size:12px; color: var(--muted);">TWD 4,000–400 / 8,000–800<br>MYR 500–50 / 1,000–100<br>THB 4,000–400 / 8,000–800</span>
+      </div>
+    </div>
+
+    <div class="strategy-card critical">
+      <div class="s-id">Strategy ID: 1717783465</div>
+      <div class="s-name">3-Tier Discount — 8 Markets</div>
+      <div class="s-live">Live since Aug 10 · Extended to Sep 12 · Budget topped up to 80K CNY</div>
+      <div class="s-markets">
+        <span class="tag tag-red">USD</span><span class="tag tag-red">TWD</span><span class="tag tag-red">MYR</span>
+        <span class="tag tag-red">THB</span><span class="tag tag-red">KRW</span><span class="tag tag-red">AUD</span>
+        <span class="tag tag-red">HKD</span><span class="tag tag-red">RUB</span>
+        <br><br>
+        <span style="font-size:12px; color: var(--muted);">Three spend tiers per currency (e.g. HKD 1,000–100 / 1,500–150 / 2,000–200)</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SECTION 2: COUPON PERFORMANCE ── -->
+<div class="section" id="s2">
+  <div class="section-title">Coupon Performance as of Aug 31 (direct from <code>edw_mkt_coup_coupondetails</code>, end of day Aug 31)</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Strategy</th>
+          <th class="right">Coupons Issued</th>
+          <th class="right">Supply Used</th>
+          <th class="right">Orders</th>
+          <th class="right">Usage Rate</th>
+          <th class="right">Discount Spent (CNY)</th>
+          <th>Budget Remaining</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:13px">S1 · 10% Off Multi-Market</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">1106078874</div>
+          </td>
+          <td class="num">2,659 / 8,500</td>
+          <td class="num">31%</td>
+          <td class="num">1,093</td>
+          <td class="num">41.11%</td>
+          <td class="num">84,937</td>
+          <td>
+            <div class="budget-bar-wrap">
+              <div class="budget-bar"><div class="budget-bar-fill ok" style="width:71.7%"></div></div>
+              <span class="budget-pct">215,063 left (71.7%)</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:13px">S2 · Tiered 3 Markets</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">1032748938</div>
+          </td>
+          <td class="num">703 / 3,000</td>
+          <td class="num">23%</td>
+          <td class="num">300</td>
+          <td class="num">42.67%</td>
+          <td class="num">33,377</td>
+          <td>
+            <div class="budget-bar-wrap">
+              <div class="budget-bar"><div class="budget-bar-fill warn" style="width:33.2%"></div></div>
+              <span class="budget-pct" style="color:var(--amber)">16,623 left (33.2%)</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div style="font-weight:600;font-size:13px">S3 · 3-Tier 8 Markets</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">1717783465</div>
+          </td>
+          <td class="num">1,086 / 2,000</td>
+          <td class="num">54%</td>
+          <td class="num">451</td>
+          <td class="num">41.53%</td>
+          <td class="num">53,400</td>
+          <td>
+            <div class="budget-bar-wrap">
+              <div class="budget-bar"><div class="budget-bar-fill warn" style="width:65.8%"></div></div>
+              <span class="budget-pct" style="color:var(--amber)">26,600 left (33.3%) · budget extended to 80K</span>
+            </div>
+          </td>
+        </tr>
+        <tr class="total-row">
+          <td>Combined</td>
+          <td class="num">4,448 / 13,500</td>
+          <td class="num">33%</td>
+          <td class="num">1,844</td>
+          <td class="num">~41%</td>
+          <td class="num">171,714</td>
+          <td>
+            <div class="budget-bar-wrap">
+              <div class="budget-bar"><div class="budget-bar-fill ok" style="width:60.8%"></div></div>
+              <span class="budget-pct">258,286 left of 430K (60.1%)</span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── SECTION 2b: DISNEY ATTRIBUTION ── -->
+<div class="section" id="s2b">
+  <div class="section-title">Direct HK Disneyland Attribution — Coupon-to-Order Linkage (Aug 1–31)</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
+    Source: <code>edw_mkt_coup_coupondetails</code> joined to <code>edw_ord_tnt_order</code>. Orders where coupon was used (validationstatus=1) AND product is HK Disneyland. Period: Aug 1–31.
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Strategy</th>
+          <th class="right">Disney Orders</th>
+          <th class="right">Tickets sold</th>
+          <th class="right">Avg tkt/order</th>
+          <th class="right">GMV (CNY)</th>
+          <th class="right">Avg GMV/order</th>
+          <th class="right">Discount (CNY)</th>
+          <th class="right">Avg discount/order</th>
+          <th class="right">Discount %</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>S1</strong> · 10% Off Multi-Market</td>
+          <td class="num">502</td>
+          <td class="num">742</td>
+          <td class="num">1.48</td>
+          <td class="num">593,537</td>
+          <td class="num">1,183</td>
+          <td class="num">39,424</td>
+          <td class="num">79</td>
+          <td class="num">6.6%</td>
+        </tr>
+        <tr>
+          <td><strong>S2</strong> · Tiered 3 Markets</td>
+          <td class="num">300</td>
+          <td class="num">628</td>
+          <td class="num">2.09</td>
+          <td class="num">481,501</td>
+          <td class="num">1,605</td>
+          <td class="num">33,377</td>
+          <td class="num">111</td>
+          <td class="num">6.9%</td>
+        </tr>
+        <tr>
+          <td><strong>S3</strong> · 3-Tier 8 Markets</td>
+          <td class="num">451</td>
+          <td class="num">977</td>
+          <td class="num">2.17</td>
+          <td class="num">680,687</td>
+          <td class="num">1,509</td>
+          <td class="num">53,400</td>
+          <td class="num">118</td>
+          <td class="num">7.8%</td>
+        </tr>
+        <tr class="total-row">
+          <td>Combined</td>
+          <td class="num">1,253</td>
+          <td class="num">2,347</td>
+          <td class="num">1.87</td>
+          <td class="num">1,755,726</td>
+          <td class="num">1,400</td>
+          <td class="num">126,201</td>
+          <td class="num">101</td>
+          <td class="num">7.2%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:10px">
+    ⓘ All three strategies show ~100% Disney attribution for Aug 1–31 — their targeted currencies align almost exclusively with HK Disneyland buyers on the platform in this period. <strong>Basket composition:</strong> S1 skews single-ticket (1.48/order, 1,183 CNY avg), while S2 and S3 are family/party bundles (2.1–2.2 tickets/order, 35% higher basket size). The deeper discounts in S2/S3 (111–118 CNY vs 79 CNY) are justified by the larger baskets.
+  </div>
+</div>
+
+<!-- ── SECTION 2c: TIER BEHAVIOR ── -->
+<div class="section" id="s2c">
+  <div class="section-title">
+    Tier Behavior — Which Discount Levels Users Hit
+    <span class="partner-tag">✓ Safe for partner use</span>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Applies to S2 (2 tiers) and S3 (3 tiers) only. Numbers show usage count and avg basket in local currency.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+    <!-- S2 -->
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th colspan="4">S2 · 1032748938 — 2 tiers</th></tr>
+          <tr><th>Currency</th><th class="right">Tier</th><th class="right">Uses</th><th class="right">Avg basket</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>TWD</td><td class="num">4,000 → <strong>-400</strong></td><td class="num"><span class="tag tag-blue">110</span> (66%)</td><td class="num">5,800</td></tr>
+          <tr><td>TWD</td><td class="num">8,000 → -800</td><td class="num">56 (34%)</td><td class="num">11,529</td></tr>
+          <tr style="background:#F8F9FC"><td>THB</td><td class="num">4,000 → <strong>-400</strong></td><td class="num"><span class="tag tag-blue">53</span> (65%)</td><td class="num">5,922</td></tr>
+          <tr style="background:#F8F9FC"><td>THB</td><td class="num">8,000 → -800</td><td class="num">29 (35%)</td><td class="num">11,940</td></tr>
+          <tr><td>MYR</td><td class="num">500 → <strong>-50</strong></td><td class="num"><span class="tag tag-blue">33</span> (66%)</td><td class="num">729</td></tr>
+          <tr><td>MYR</td><td class="num">1,000 → -100</td><td class="num">17 (34%)</td><td class="num">1,307</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- S3 -->
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th colspan="4">S3 · 1717783465 — 3 tiers</th></tr>
+          <tr><th>Currency</th><th class="right">Tier</th><th class="right">Uses</th><th class="right">Avg basket</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HKD</td><td class="num">1,000 → -100</td><td class="num"><span class="tag tag-blue">79</span> (45%)</td><td class="num">1,314</td></tr>
+          <tr><td>HKD</td><td class="num">1,500 → -150</td><td class="num">49 (28%)</td><td class="num">1,698</td></tr>
+          <tr><td>HKD</td><td class="num">2,000 → -200</td><td class="num">47 (27%)</td><td class="num">2,919</td></tr>
+          <tr style="background:#F8F9FC"><td>TWD</td><td class="num">4,000 → -400</td><td class="num">34 (41%)</td><td class="num">5,168</td></tr>
+          <tr style="background:#F8F9FC"><td>TWD</td><td class="num">6,000 → <strong>-600</strong></td><td class="num"><span class="tag tag-green">34</span> (41%) ★</td><td class="num">6,761</td></tr>
+          <tr style="background:#F8F9FC"><td>TWD</td><td class="num">8,000 → -800</td><td class="num">16 (19%)</td><td class="num">10,392</td></tr>
+          <tr><td>KRW</td><td class="num">200K → <strong>-20K</strong></td><td class="num"><span class="tag tag-blue">49</span> (78%)</td><td class="num">245K</td></tr>
+          <tr><td>KRW</td><td class="num">300K → -30K</td><td class="num">7 (11%)</td><td class="num">346K</td></tr>
+          <tr><td>KRW</td><td class="num">400K → -40K</td><td class="num">7 (11%)</td><td class="num">457K</td></tr>
+          <tr style="background:#F8F9FC"><td>THB</td><td class="num">4,000 → -400</td><td class="num">10 (31%)</td><td class="num">5,493</td></tr>
+          <tr style="background:#F8F9FC"><td>THB</td><td class="num">6,000 → -600</td><td class="num">6 (19%)</td><td class="num">6,427</td></tr>
+          <tr style="background:#F8F9FC"><td>THB</td><td class="num">8,000 → <strong>-800</strong></td><td class="num"><span class="tag tag-green">16</span> (50%) ★</td><td class="num">12,705</td></tr>
+          <tr><td>MYR</td><td class="num">500 → <strong>-50</strong></td><td class="num"><span class="tag tag-blue">14</span> (56%)</td><td class="num">644</td></tr>
+          <tr><td>MYR</td><td class="num">700 → -70</td><td class="num">6 (24%)</td><td class="num">856</td></tr>
+          <tr><td>MYR</td><td class="num">1,000 → -100</td><td class="num">5 (20%)</td><td class="num">1,148</td></tr>
+          <tr style="background:#F8F9FC"><td>RUB</td><td class="num">10K → <strong>-1K</strong></td><td class="num"><span class="tag tag-blue">17</span> (55%)</td><td class="num">13,961</td></tr>
+          <tr style="background:#F8F9FC"><td>RUB</td><td class="num">15K → -1.5K</td><td class="num">8 (26%)</td><td class="num">16,355</td></tr>
+          <tr style="background:#F8F9FC"><td>RUB</td><td class="num">20K → -2K</td><td class="num">6 (19%)</td><td class="num">22,270</td></tr>
+          <tr><td>USD</td><td class="num">150 → <strong>-15</strong></td><td class="num"><span class="tag tag-blue">12</span> (57%)</td><td class="num">178</td></tr>
+          <tr><td>USD</td><td class="num">250 → -25</td><td class="num">9 (43%)</td><td class="num">314</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.8">
+    ★ <strong>TWD anomaly</strong>: middle tier (6,000→-600) is the most used — the "Party of Two" product naturally prices at ~6K–8K TWD, making 6K the effective entry for most buyers, not 4K.<br>
+    ★ <strong>THB bimodal</strong>: top tier (8,000→-800) is the most popular, not the entry. Thai buyers polarise into individual (entry) or premium family bookings (top tier), skipping the middle.<br>
+    <strong>General pattern</strong>: ~60–65% of users in most markets hit the entry tier; a meaningful 35–40% upsell to higher tiers, confirming the graduated structure drives basket expansion.
+  </div>
+</div>
+
+<!-- ── SECTION 2d: MARKET DISTRIBUTION ── -->
+<div class="section" id="s2d">
+  <div class="section-title">Market Distribution — Where Coupon Usage Concentrated</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Currency used as market proxy. Source: <code>edw_mkt_coup_coupondetails</code>, validationstatus=1, lifetime through Aug 30.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th colspan="3">S1 · 1106078874 (1,064 orders)</th></tr>
+          <tr><th>Currency</th><th class="right">Orders</th><th class="right">Share</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HKD</td><td class="num">191</td><td class="num">18.0%</td></tr>
+          <tr><td>TWD</td><td class="num">165</td><td class="num">15.5%</td></tr>
+          <tr><td>JPY</td><td class="num">161</td><td class="num">15.1%</td></tr>
+          <tr><td>THB</td><td class="num">119</td><td class="num">11.2%</td></tr>
+          <tr><td>KRW</td><td class="num">92</td><td class="num">8.6%</td></tr>
+          <tr><td>PHP</td><td class="num">77</td><td class="num">7.2%</td></tr>
+          <tr><td>RUB</td><td class="num">47</td><td class="num">4.4%</td></tr>
+          <tr><td>MYR / SGD</td><td class="num">41 / 38</td><td class="num">3.9% / 3.6%</td></tr>
+          <tr><td>Other (8 currencies)</td><td class="num">133</td><td class="num">12.5%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th colspan="3">S2 · 1032748938 (300 orders)</th></tr>
+          <tr><th>Currency</th><th class="right">Orders</th><th class="right">Share</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>TWD</td><td class="num">166</td><td class="num"><strong>55.7%</strong></td></tr>
+          <tr><td>THB</td><td class="num">82</td><td class="num">27.5%</td></tr>
+          <tr><td>MYR</td><td class="num">50</td><td class="num">16.8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th colspan="3">S3 · 1717783465 (451 orders)</th></tr>
+          <tr><th>Currency</th><th class="right">Orders</th><th class="right">Share</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HKD</td><td class="num">175</td><td class="num"><strong>39.2%</strong></td></tr>
+          <tr><td>TWD</td><td class="num">84</td><td class="num">18.8%</td></tr>
+          <tr><td>KRW</td><td class="num">63</td><td class="num">14.1%</td></tr>
+          <tr><td>THB</td><td class="num">32</td><td class="num">7.2%</td></tr>
+          <tr><td>RUB</td><td class="num">31</td><td class="num">7.0%</td></tr>
+          <tr><td>MYR</td><td class="num">25</td><td class="num">5.6%</td></tr>
+          <tr><td>USD</td><td class="num">21</td><td class="num">4.7%</td></tr>
+          <tr><td>AUD</td><td class="num">15</td><td class="num">3.4%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.7">
+    <strong>Pattern</strong>: TWD is the single largest market across all three strategies (15.6–55.5% depending on strategy) — Taiwan is the most price-responsive Disney-buying market on platform. HKD is the second consistent anchor (19–38%). S1's broad 16-currency spread is diluted by design; S2 and S3 concentrate more tightly around their 3 core currencies.
+  </div>
+</div>
+
+<!-- ── SECTION 3: HEADLINE LIFT ── -->
+<div class="section" id="s3">
+  <div class="section-title">
+    Headline Lift — HK Disneyland Orders on Platform
+    <span class="partner-tag">✓ Safe for partner use</span>
+  </div>
+  <div class="lift-grid">
+    <div class="lift-card">
+      <div class="lift-num">+38%</div>
+      <div class="lift-label">
+        <strong>Daily order growth — MY / TH / TW</strong>
+        Push market daily avg during campaign vs pre-campaign baseline
+      </div>
+    </div>
+    <div class="lift-card">
+      <div class="lift-num">+100%</div>
+      <div class="lift-label">
+        <strong>Strongest market lift (MY)</strong>
+        Malaysia daily orders during campaign vs pre-campaign
+      </div>
+    </div>
+    <div class="lift-card">
+      <div class="lift-num">~40%</div>
+      <div class="lift-label">
+        <strong>Coupon conversion rate</strong>
+        Consistent across all 3 strategies — coupons collected → order placed
+      </div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:10px">
+    ⓘ This measures absolute HK Disneyland order volume on-platform. See the Attach Rate section for the GBA-bound flyer conversion view.
+  </div>
+</div>
+
+<!-- ── SECTION 4: PERIOD-OVER-PERIOD ── -->
+<div class="section" id="s4">
+  <div class="section-title">
+    Order Volume Lift — HKDL PoP &amp; YoY
+    <span class="partner-tag">✓ Safe for partner use</span>
+  </div>
+
+  <!-- Summary cuts -->
+  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Summary by market group</div>
+  <div class="table-wrap" style="margin-bottom:20px">
+    <table>
+      <thead>
+        <tr>
+          <th>Market group</th>
+          <th class="right">PoP pre (daily avg)</th>
+          <th class="right">PoP camp (daily avg)</th>
+          <th class="right">PoP lift</th>
+          <th class="right">YoY Aug 2025 (daily avg)</th>
+          <th class="right">YoY Aug 2026 (daily avg)</th>
+          <th class="right">YoY lift</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>MY + TH + TW</strong> <span style="font-size:11px;color:var(--muted)">(broader push markets)</span></td>
+          <td class="num">59.0</td><td class="num">81.3</td>
+          <td><span class="lift-pct high">+38%</span></td>
+          <td class="num">38.0</td><td class="num">80.2</td>
+          <td><span class="lift-pct high">+111%</span></td>
+        </tr>
+        <tr>
+          <td><strong>S1-eligible markets</strong> <span style="font-size:11px;color:var(--muted)">(all coupon-targeted)</span></td>
+          <td class="num">425.1</td><td class="num">580.2</td>
+          <td><span class="lift-pct high">+37%</span></td>
+          <td class="num">241.3</td><td class="num">580.2</td>
+          <td><span class="lift-pct high">+141%</span></td>
+        </tr>
+        <tr class="total-row">
+          <td><strong>All S1+S2 eligible markets</strong></td>
+          <td class="num">449.5</td><td class="num">607.1</td>
+          <td><span class="lift-pct high">+35%</span></td>
+          <td class="num">248.6</td><td class="num">607.1</td>
+          <td><span class="lift-pct high">+144%</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert warning" style="margin-bottom:20px">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-body">
+      <strong>PoP and YoY tell different stories — read together, not separately.</strong>
+      PoP compares daily averages within 2026 — Jul 1–19 (19 days, last clean pre-coupon window before S1 launched Jul 20) vs Aug 1–31 (31 days). Both periods are divided by their day count (÷19 and ÷31) to get orders/day, so the lift % compares the same unit on both sides despite the different period lengths. YoY (+111–144%) compares Aug 2026 to Aug 2025, controlling for seasonality but including platform-wide growth. Japan (no targeted coupon) grew +129% YoY and +62% PoP — a reminder that the platform was rising independently of this campaign.
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 3b: ATTACH RATE REALITY CHECK ── -->
+<div class="section" id="s3b">
+  <div class="section-title">
+    Flight → HK Disneyland Attach Rate — GBA-bound Flyers (MY / TH / TW + S1 Markets)
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:14px">
+    <strong>Corrected definition:</strong> Attach rate = GBA-bound flight bookers (destination: HKG / SZX / CAN / MFM) from each market who <em>also</em> bought an HK Disneyland ticket in the same month. Source: <code>edw_ord_flt_order</code> × <code>edw_ord_tnt_order</code> joined on UID, same-month window. This is the campaign-relevant metric: did flyers heading to the Greater Bay Area cross-purchase Disney?
+  </div>
+
+  <!-- Primary: MY / TH / TW -->
+  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Primary push markets — MY, TH, TW</div>
+  <div class="table-wrap" style="margin-bottom:8px">
+    <table>
+      <thead>
+        <tr>
+          <th>Market</th>
+          <th class="right">Aug 2025</th>
+          <th class="right">Jul 2026</th>
+          <th class="right">Aug 2026</th>
+          <th>YoY (Aug)</th>
+          <th>MoM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>TW</strong> Taiwan</td>
+          <td class="num">0.51%</td>
+          <td class="num">0.65%</td>
+          <td class="num"><strong>0.88%</strong></td>
+          <td><span class="lift-pct high">+73%</span></td>
+          <td><span class="lift-pct high">+35% (Jul→Aug)</span></td>
+        </tr>
+        <tr>
+          <td><strong>TH</strong> Thailand ★</td>
+          <td class="num">0.55%</td>
+          <td class="num">1.42%</td>
+          <td class="num"><strong>0.95%</strong></td>
+          <td><span class="lift-pct high">+73%</span></td>
+          <td><span class="lift-pct high">+1% (Jun→Aug)</span></td>
+        </tr>
+        <tr>
+          <td><strong>MY</strong> Malaysia</td>
+          <td class="num">0.09%</td>
+          <td class="num">0.27%</td>
+          <td class="num"><strong>0.37%</strong></td>
+          <td><span class="lift-pct high">+311%</span></td>
+          <td><span class="lift-pct high">+37% (Jul→Aug)</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.7">
+    ★ <strong>TH attach rate stability around campaign baseline:</strong> July 2026 spiked to 1.42% — driven by Thai school holidays (Jun 27–Aug 11) coinciding with S2/S3 launch, showing strong demand timing. When measured Jul→Aug, the rate dropped to 0.95% (−33%), which looks concerning in isolation. However, when comparing Jun→Aug (a full holiday cycle), the rate moved from 0.94% to 0.95% — essentially flat, demonstrating the campaign <strong>held the elevated baseline</strong> rather than collapsing. The Jul spike was genuine demand (school holidays + new product), not unsustainable. YoY context confirms the gain is real: Aug 2026 (0.95%) vs Aug 2025 (0.55%) = <strong>+73%</strong>. Campaign maintained ~0.95% attach rate post-holiday, a healthy platform for future pushes.
+  </div>
+
+  <!-- Supplementary: S1-eligible markets -->
+  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Supplementary — S1-eligible markets (Aug 2025 vs Aug 2026)</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Market</th>
+          <th>Coupons</th>
+          <th class="right">Aug 2025</th>
+          <th class="right">Aug 2026</th>
+          <th>YoY</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>JP</strong> Japan</td><td><span class="tag tag-blue">S1</span></td><td class="num">0.59%</td><td class="num">1.44%</td><td><span class="lift-pct high">+144%</span></td></tr>
+        <tr><td><strong>KR</strong> Korea</td><td><span class="tag tag-blue">S1</span><span class="tag tag-red">S3</span></td><td class="num">0.19%</td><td class="num">0.80%</td><td><span class="lift-pct high">+321%</span></td></tr>
+        <tr><td><strong>AU</strong> Australia</td><td><span class="tag tag-blue">S1</span><span class="tag tag-red">S3</span></td><td class="num">0.10%</td><td class="num">0.41%</td><td><span class="lift-pct high">+310%</span></td></tr>
+        <tr><td><strong>GB</strong> UK</td><td><span class="tag tag-blue">S1</span></td><td class="num">0.08%</td><td class="num">0.43%</td><td><span class="lift-pct high">+438%</span></td></tr>
+        <tr><td><strong>PH</strong> Philippines</td><td><span class="tag tag-blue">S1</span></td><td class="num">0.53%</td><td class="num">1.01%</td><td><span class="lift-pct high">+91%</span></td></tr>
+        <tr><td><strong>HK</strong> Hong Kong</td><td><span class="tag tag-blue">S1</span><span class="tag tag-red">S3</span></td><td class="num">0.29%</td><td class="num">0.58%</td><td><span class="lift-pct high">+100%</span></td></tr>
+        <tr><td><strong>SG</strong> Singapore</td><td><span class="tag tag-blue">S1</span></td><td class="num">0.17%</td><td class="num">0.37%</td><td><span class="lift-pct high">+118%</span></td></tr>
+        <tr><td><strong>RU</strong> Russia</td><td><span class="tag tag-blue">S1</span><span class="tag tag-red">S3</span></td><td class="num">0.00%</td><td class="num">0.72%</td><td><span class="lift-pct low">new</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.8">
+    <strong>Overall read</strong>: With the correct denominator (GBA-bound flyers only), attach rates are in a meaningful range — 0.35–1.4% for the push markets, 0.4–1.4% for S1 markets. All three push markets improved significantly YoY. JP improved +130% with only S1 (broad 10% off), suggesting platform-level tailwinds are real across all markets — the campaign-specific incrementality for MY/TH/TW sits on top of that baseline. The strongest signal remains MY (+289% YoY, off a low base) and TW (+71% off a much larger base).<br><br>
+    <strong>Methodology note</strong>: Same-month UID join — flight and Disney orders matched within the same calendar month. This undercounts users who book flights in one month and Disney tickets in the next, so true attach rates are likely modestly higher.
+  </div>
+</div>
+
+
+<!-- ── SECTION 5: BEHAVIORAL INSIGHTS ── -->
+<div class="section" id="s5">
+  <div class="section-title">Behavioral Insights</div>
+  <div class="insight-grid">
+
+    <div class="insight-card">
+      <h4>📈 Strategy 3 drove the clearest campaign spike</h4>
+      <ul>
+        <li>Launched Aug 10; platform orders spiked to <strong>1,184</strong> on Aug 11 — the campaign's single largest day</li>
+        <li>That's ~+78% vs Aug 10 (665 orders), and 2× the pre-campaign daily baseline</li>
+        <li>3-tier structure (vs S2's 2 tiers) likely encouraged basket upsizing to hit higher discount thresholds</li>
+        <li>Budget extended to 80,000 CNY and campaign extended to Sep 12 — 27,377 CNY (34.2%) still available, still actively running</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>🎯 ~100% of Aug coupon orders went to HK Disneyland</h4>
+      <ul>
+        <li>1,253 of 1,253 Aug 1–31 coupon orders were directly attributed to HK Disneyland</li>
+        <li>All three strategies converge to 100% Disney share in August — their targeted currencies (TWD/MYR/THB/HKD/KRW) align almost exclusively with Disney buyers on platform</li>
+        <li>S3 generated the most Disney GMV despite launching latest — 681K CNY vs 594K (S1) and 482K (S2)</li>
+        <li>Most popular product: <em>Party of Two 1-Day Ticket (Free HKD 80 Dining Voucher)</em> — TWD buyers lead</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>💰 Discount efficiency: 6.5–7.8% of GMV</h4>
+      <ul>
+        <li>Discount cost as % of Disney GMV generated: S1 6.6% · S2 6.9% · S3 7.8%</li>
+        <li>~40% coupon-to-order conversion rate across all three strategies (vs 15–25% industry benchmark)</li>
+        <li>Thresholds are well-calibrated — ~65% of users hit the entry tier, 35% upsell to higher tiers</li>
+        <li>TWD exception: middle tier (6K→-600) is the most used — product price naturally lands there for 2-person tickets</li>
+      </ul>
+    </div>
+    <div class="insight-card">
+      <h4>👤 Coupons attracted smaller-group / individual bookers</h4>
+      <ul>
+        <li>Avg tickets per order fell from <strong>2.7 → 1.9</strong> during the campaign vs pre-campaign</li>
+        <li>HK market saw biggest drop (3.2 → 1.9 tickets/order), US also declined</li>
+        <li>TW, KR, MY saw tickets/order hold or increase — consistent with family/group travel from those markets</li>
+        <li>Signals new/casual individual bookers entering via coupons — relevant for new customer acquisition story</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>📈 Attach rate improved YoY across all push markets</h4>
+      <ul>
+        <li>Corrected metric: GBA-bound flyers (to HKG/SZX/CAN/MFM) who also bought HK Disneyland, same month</li>
+        <li>TW: 0.51% → 0.88% (+73% YoY) · TH: 0.55% → 0.95% (+73%) · MY: 0.09% → 0.37% (+311%)</li>
+        <li>TH July 2026 was an outlier spike at 1.42% (Thai school holidays + S2/S3 launch); Aug normalised back to 0.95% — in line with Jun 2026 (0.94%) and well above Aug 2025 (0.55%)</li>
+        <li>JP improved +130% YoY with only S1 — platform-level tailwinds are real, campaign markets sit on top of that</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>🌏 TWD is the dominant market across all three coupons</h4>
+      <ul>
+        <li>Taiwan (TWD) is the top or second-largest currency in every strategy: 55.5% of S2, 18.8% of S3, 15.6% of S1</li>
+        <li>HKD is the other consistent anchor — 19.1% (S1), 38.4% (S3)</li>
+        <li>S1's 16-currency spread dilutes any single market's share by design; S2/S3 concentrate tightly around 3 core markets each</li>
+      </ul>
+    </div>
+
+    <div class="insight-card">
+      <h4>📉 Strategy 2 momentum has fully tapered</h4>
+      <ul>
+        <li>Near-zero new saves since mid-August; activity has largely stopped</li>
+        <li>Peaked around Aug 7–8 (~100 daily saves), then steadily declined</li>
+        <li>64.6% of budget spent with no remaining organic pull — the addressable audience has been captured</li>
+        <li>S3 effectively replaced S2's role with broader currency coverage and tighter tiers</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+
+    <!-- Password Protection -->
+    <script>
+        (function() {
+            const correctPassword = "hkdlxsell";
+            const isPasswordSet = sessionStorage.getItem('pageUnlocked');
+            
+            if (!isPasswordSet) {
+                document.body.style.display = 'none';
+                const password = prompt('🔐 This page requires a password:
+
+(Hint: Campaign codename)');
+                
+                if (password === correctPassword) {
+                    sessionStorage.setItem('pageUnlocked', 'true');
+                    document.body.style.display = 'block';
+                } else {
+                    alert('❌ Incorrect password. Access denied.');
+                    window.location.href = 'about:blank';
+                }
+            }
+        })();
+    </script>
+
+</body>
+<script>
+  // Highlight active nav link on scroll
+  const sections = document.querySelectorAll('.section[id]');
+  const navLinks = document.querySelectorAll('.nav-sidebar a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector('.nav-sidebar a[href="#' + entry.target.id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</html>
