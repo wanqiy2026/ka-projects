@@ -416,8 +416,81 @@
     .strategy-grid, .lift-grid, .insight-grid { grid-template-columns: 1fr; }
   }
 </style>
+<style>
+  /* ── Password Gate ── */
+  #pw-gate {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(15, 22, 35, 0.92);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #pw-gate.hidden { display: none; }
+  #pw-box {
+    background: #fff; border-radius: 16px;
+    padding: 40px 48px; width: 360px; max-width: 90vw;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  #pw-box .pw-logo {
+    width: 48px; height: 48px; margin: 0 auto 20px;
+    background: #EEF3FF; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #pw-box .pw-logo svg { width: 24px; height: 24px; color: #1A54F0; }
+  #pw-box h2 { font-size: 18px; font-weight: 700; color: #0F1623; margin-bottom: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  #pw-box p { font-size: 13px; color: #5E6C84; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  #pw-input {
+    width: 100%; padding: 10px 14px; font-size: 15px;
+    border: 1.5px solid #DDE2EC; border-radius: 8px;
+    outline: none; font-family: inherit; letter-spacing: 0.05em;
+    transition: border-color 0.15s;
+  }
+  #pw-input:focus { border-color: #1A54F0; }
+  #pw-input.error { border-color: #C9302C; animation: shake 0.3s ease; }
+  #pw-btn {
+    width: 100%; margin-top: 12px; padding: 11px;
+    background: #1A54F0; color: #fff; border: none;
+    border-radius: 8px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: background 0.15s;
+  }
+  #pw-btn:hover { background: #1244CC; }
+  #pw-err { font-size: 12px; color: #C9302C; margin-top: 8px; min-height: 16px; font-family: inherit; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+</style>
 </head>
 <body>
+
+<div id="pw-gate">
+  <div id="pw-box">
+    <div class="pw-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <h2>Protected Report</h2>
+    <p>Enter the access password to view this report.</p>
+    <input id="pw-input" type="password" placeholder="Password" autocomplete="current-password" />
+    <button id="pw-btn">Unlock</button>
+    <div id="pw-err"></div>
+  </div>
+</div>
+<script>
+if (sessionStorage.getItem('authenticated') !== 'true') {
+    const pwd = prompt('Enter password:');
+    if (pwd === 'hkdlxsell') {
+        sessionStorage.setItem('authenticated', 'true');
+    } else {
+        document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px">Access Denied</h1>';
+        throw new Error('Access denied');
+    }
+}
+</script>
+
 
 <nav class="nav-sidebar">
   <div class="nav-logo">Campaign Report</div>
@@ -1039,29 +1112,6 @@
 </div>
 
 
-    <!-- Password Protection -->
-    <script>
-        (function() {
-            const correctPassword = "hkdlxsell";
-            const isPasswordSet = sessionStorage.getItem('pageUnlocked');
-            
-            if (!isPasswordSet) {
-                document.body.style.display = 'none';
-                const password = prompt('🔐 This page requires a password:
-
-(Hint: Campaign codename)');
-                
-                if (password === correctPassword) {
-                    sessionStorage.setItem('pageUnlocked', 'true');
-                    document.body.style.display = 'block';
-                } else {
-                    alert('❌ Incorrect password. Access denied.');
-                    window.location.href = 'about:blank';
-                }
-            }
-        })();
-    </script>
-
 </body>
 <script>
   // Highlight active nav link on scroll
@@ -1077,5 +1127,44 @@
     });
   }, { rootMargin: '-20% 0px -70% 0px' });
   sections.forEach(s => observer.observe(s));
+</script>
+<script>
+  (function() {
+    const PASS = 'hkdlxsell';
+    const gate = document.getElementById('pw-gate');
+    const input = document.getElementById('pw-input');
+    const btn = document.getElementById('pw-btn');
+    const err = document.getElementById('pw-err');
+
+    function unlock() {
+      gate.classList.add('hidden');
+      sessionStorage.setItem('report_unlocked', '1');
+    }
+
+    if (sessionStorage.getItem('report_unlocked') === '1') {
+      unlock();
+    }
+
+    function attempt() {
+      if (input.value === PASS) {
+        unlock();
+      } else {
+        err.textContent = 'Incorrect password. Please try again.';
+        input.classList.add('error');
+        input.value = '';
+        setTimeout(() => input.classList.remove('error'), 400);
+        input.focus();
+      }
+    }
+
+    btn.addEventListener('click', attempt);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') attempt();
+      if (input.classList.contains('error')) {
+        input.classList.remove('error');
+        err.textContent = '';
+      }
+    });
+  })();
 </script>
 </html>
